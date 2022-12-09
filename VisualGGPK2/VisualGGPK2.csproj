@@ -25,7 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DirectXTexWrapper\DirectXTexWrapper.vcxproj" />
     <ProjectReference Include="..\LibDat2\LibDat2.csproj" />
     <ProjectReference Include="..\LibGGPK2\LibGGPK2.csproj" />
   </ItemGroup>

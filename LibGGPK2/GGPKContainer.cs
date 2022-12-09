@@ -1,4 +1,5 @@
 ﻿using LibBundle;
+using LibDat2;
 using LibGGPK2.Records;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,8 @@ namespace LibGGPK2
         /// <summary>
         /// Get the FileRecord of a bundle
         /// </summary>
-        public FileRecord RecordOfBundle(LibBundle.Records.BundleRecord bundleRecord) {
+        public FileRecord RecordOfBundle(LibBundle.Records.BundleRecord bundleRecord)
+        {
             if (_RecordOfBundle == null) return null;
             if (!_RecordOfBundle.TryGetValue(bundleRecord, out var fr))
                 _RecordOfBundle.Add(bundleRecord, fr = (FileRecord)FindRecord(bundleRecord.Name, OriginalBundles2));
@@ -46,12 +48,14 @@ namespace LibGGPK2
         public GGPKContainer(string path, bool BundleMode = false, bool SteamMode = false, bool BuildTree = true)
         {
             // Steam Mode (No GGPK)
-            if (SteamMode) {
+            if (SteamMode)
+            {
                 if (BundleMode)
                     throw new NotSupportedException("BundleMode and SteamMode cannot be both true");
                 Environment.CurrentDirectory = Directory.GetParent(path).FullName;
                 Index = new IndexContainer(path);
-                if (BuildTree) {
+                if (BuildTree)
+                {
                     rootDirectory = FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), 0, 0, this);
                     foreach (var f in Index.Files)
                         BuildBundleTree(f, rootDirectory);
@@ -66,7 +70,7 @@ namespace LibGGPK2
 
             // Read ROOT Directory Record
             BaseRecord ggpk;
-            while ((ggpk = GetRecord()) is not GGPKRecord);
+            while ((ggpk = GetRecord()) is not GGPKRecord) ;
             ggpkRecord = ggpk as GGPKRecord;
             rootDirectory = GetRecord(ggpkRecord.RootDirectoryOffset) as DirectoryRecord;
             rootDirectory.Name = "ROOT";
@@ -90,7 +94,8 @@ namespace LibGGPK2
                     return;
                 fileStream.Seek(_index.DataBegin, SeekOrigin.Begin);
                 Index = new IndexContainer(Reader);
-                if (BuildTree) {
+                if (BuildTree)
+                {
                     FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), (int)OriginalBundles2.Offset, OriginalBundles2.Length, this);
                     rootDirectory.Children.Remove(OriginalBundles2);
                     rootDirectory.Children.Add(FakeBundles2);
@@ -161,7 +166,8 @@ namespace LibGGPK2
         /// <param name="path">Path in GGPK under <paramref name="parent"/></param>
         /// <param name="parent">Where to start searching, null for ROOT directory in GGPK</param>
         /// <returns>null if not found</returns>
-        public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null) {
+        public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
+        {
             parent ??= rootDirectory;
             var SplittedPath = path.Split('/', '\\');
             foreach (var name in SplittedPath)
@@ -187,7 +193,7 @@ namespace LibGGPK2
 
 #pragma warning disable CA1816 // Dispose should call SuppressFinalize
         public virtual void Dispose()
-		{
+        {
             Writer.Flush();
             Writer.Close();
             Reader.Close();
@@ -206,10 +212,13 @@ namespace LibGGPK2
             MemoryStream ms = null;
             var failBundles = 0;
             var failFiles = 0;
-            foreach (var (record, path) in list) {
+            foreach (var (record, path) in list)
+            {
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
-                if (record is BundleFileNode bfn) {
-                    if (br != bfn.BundleFileRecord.bundleRecord) {
+                if (record is BundleFileNode bfn)
+                {
+                    if (br != bfn.BundleFileRecord.bundleRecord)
+                    {
                         ms?.Close();
                         br = bfn.BundleFileRecord.bundleRecord;
                         br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
@@ -220,18 +229,55 @@ namespace LibGGPK2
                     if (ms == null)
                         ++failFiles;
                     else
-                        File.WriteAllBytes(path, bfn.BatchReadFileContent(ms));
-                } else
-                    File.WriteAllBytes(path, record.ReadFileContent());
+                    {
+                        if (record.DataFormat == IFileRecord.DataFormats.Dat)
+                        {
+                            try
+                            {
+                                var container = new DatContainer(record.ReadFileContent(), bfn.Name);
+                                File.WriteAllText(string.Format($"{path}.csv"), container.ToCsv());
+                            }
+                            catch (Exception ex)
+                            {
+                                ++failFiles;
+                            }
+                        }
+                        else
+                        {
+                            File.WriteAllBytes(path, bfn.BatchReadFileContent(ms));
+                        }
+                    }
+                }
+                else
+                {
+                    if (record.DataFormat == IFileRecord.DataFormats.Dat)
+                    {
+                        try
+                        {
+                            var container = new DatContainer(record.ReadFileContent(), "tmp");
+                            File.WriteAllText(string.Format($"{path}.csv"), container.ToCsv());
+                        }
+                        catch (Exception ex)
+                        {
+                            ++failFiles;
+                        }
+                    }
+                    else
+                    {
+                        File.WriteAllBytes(path, record.ReadFileContent());
+                    }
+                }
                 ProgressStep?.Invoke();
             }
             if (failBundles != 0 || failFiles != 0)
                 throw new BundleMissingException(failBundles, failFiles);
         }
 
-        public class BundleMissingException : Exception {
+        public class BundleMissingException : Exception
+        {
             public int failBundles, failFiles;
-            public BundleMissingException(int failBundles, int failFiles) : base($"{failBundles} bundles are missing\n{failFiles} files were not exported!") {
+            public BundleMissingException(int failBundles, int failFiles) : base($"{failBundles} bundles are missing\n{failFiles} files were not exported!")
+            {
                 this.failBundles = failBundles;
                 this.failFiles = failFiles;
             }
@@ -242,7 +288,8 @@ namespace LibGGPK2
         /// </summary>
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null) {
+        public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        {
             var bundles = Index == null ? new() : new List<LibBundle.Records.BundleRecord>(Index.Bundles);
             var changed = false;
             var BundleToSave = Index.GetSmallestBundle(bundles);
@@ -250,14 +297,16 @@ namespace LibGGPK2
 
             if (Index != null) // else BundleMode
                 if (fileStream == null) // SteamMode
-                    while (!File.Exists(BundleToSave.Name)) {
+                    while (!File.Exists(BundleToSave.Name))
+                    {
                         bundles.Remove(BundleToSave);
                         if (bundles.Count == 0)
                             throw new("Couldn't find a bundle to save");
                         BundleToSave = Index.GetSmallestBundle(bundles);
                     }
                 else
-                    while (fr == null) {
+                    while (fr == null)
+                    {
                         bundles.Remove(BundleToSave);
                         if (bundles.Count == 0)
                             throw new("Couldn't find a bundle to save");
@@ -266,27 +315,33 @@ namespace LibGGPK2
                     }
 
             var SavedSize = 0;
-            foreach (var (record, path) in list) {
-                if (SavedSize > 200000000 && bundles.Count > 1) { // 200MB per bundle
+            foreach (var (record, path) in list)
+            {
+                if (SavedSize > 200000000 && bundles.Count > 1)
+                { // 200MB per bundle
                     changed = true;
                     if (fileStream == null) // SteamMode
                         BundleToSave.Save();
-                    else {
+                    else
+                    {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                         BundleToSave.Bundle.offset = fr.DataBegin;
                         BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                     }
                     BundleToSave = Index.GetSmallestBundle();
 
-                    if (Index != null) { // else BundleMode
+                    if (Index != null)
+                    { // else BundleMode
                         fr = RecordOfBundle(BundleToSave);
                         if (fileStream == null) // SteamMode
-                            while (!File.Exists(BundleToSave.Name)) {
+                            while (!File.Exists(BundleToSave.Name))
+                            {
                                 bundles.Remove(BundleToSave);
                                 BundleToSave = Index.GetSmallestBundle(bundles);
                             }
                         else
-                            while (fr == null) {
+                            while (fr == null)
+                            {
                                 bundles.Remove(BundleToSave);
                                 BundleToSave = Index.GetSmallestBundle(bundles);
                                 fr = RecordOfBundle(BundleToSave);
@@ -301,11 +356,13 @@ namespace LibGGPK2
                     record.ReplaceContent(File.ReadAllBytes(path));
                 ProgressStep();
             }
-            if (BundleToSave != null && SavedSize > 0) {
+            if (BundleToSave != null && SavedSize > 0)
+            {
                 changed = true;
                 if (fileStream == null) // SteamMode
                     BundleToSave.Save();
-                else {
+                else
+                {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
                     BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
@@ -325,7 +382,8 @@ namespace LibGGPK2
         /// </summary>
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, Action ProgressStep = null) {
+        public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, Action ProgressStep = null)
+        {
             var bundles = Index == null ? new() : new List<LibBundle.Records.BundleRecord>(Index.Bundles);
             var changed = false;
             var BundleToSave = Index.GetSmallestBundle(bundles);
@@ -333,14 +391,16 @@ namespace LibGGPK2
 
             if (Index != null) // else BundleMode
                 if (fileStream == null) // SteamMode
-                    while (!File.Exists(BundleToSave.Name)) {
+                    while (!File.Exists(BundleToSave.Name))
+                    {
                         bundles.Remove(BundleToSave);
                         if (bundles.Count == 0)
                             throw new("Couldn't find a bundle to save");
                         BundleToSave = Index.GetSmallestBundle(bundles);
                     }
                 else
-                    while (fr == null) {
+                    while (fr == null)
+                    {
                         bundles.Remove(BundleToSave);
                         if (bundles.Count == 0)
                             throw new("Couldn't find a bundle to save");
@@ -349,27 +409,33 @@ namespace LibGGPK2
                     }
 
             var SavedSize = 0;
-            foreach (var (record, zipped) in list) {
-                if (SavedSize > 200000000 && bundles.Count > 1) { // 200MB per bundle
+            foreach (var (record, zipped) in list)
+            {
+                if (SavedSize > 200000000 && bundles.Count > 1)
+                { // 200MB per bundle
                     changed = true;
                     if (fileStream == null) // SteamMode
                         BundleToSave.Save();
-                    else {
+                    else
+                    {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                         BundleToSave.Bundle.offset = fr.DataBegin;
                         BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                     }
                     BundleToSave = Index.GetSmallestBundle();
 
-                    if (Index != null) { // else BundleMode
+                    if (Index != null)
+                    { // else BundleMode
                         fr = RecordOfBundle(BundleToSave);
                         if (fileStream == null) // SteamMode
-                            while (!File.Exists(BundleToSave.Name)) {
+                            while (!File.Exists(BundleToSave.Name))
+                            {
                                 bundles.Remove(BundleToSave);
                                 BundleToSave = Index.GetSmallestBundle(bundles);
                             }
                         else
-                            while (fr == null) {
+                            while (fr == null)
+                            {
                                 bundles.Remove(BundleToSave);
                                 BundleToSave = Index.GetSmallestBundle(bundles);
                                 fr = RecordOfBundle(BundleToSave);
@@ -390,11 +456,13 @@ namespace LibGGPK2
                     record.ReplaceContent(b);
                 ProgressStep();
             }
-            if (BundleToSave != null && SavedSize > 0) {
+            if (BundleToSave != null && SavedSize > 0)
+            {
                 changed = true;
                 if (fileStream == null)
                     BundleToSave.Save();
-                else {
+                else
+                {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
                     BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
@@ -435,11 +503,14 @@ namespace LibGGPK2
         /// <param name="record">File/Directory Record</param>
         /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="regex">Regular Expression for filtering files by their path</param>
-        public static void RecursiveFileList(RecordTreeNode record, ICollection<IFileRecord> list, string regex = null) {
-            if (record is IFileRecord fr) {
+        public static void RecursiveFileList(RecordTreeNode record, ICollection<IFileRecord> list, string regex = null)
+        {
+            if (record is IFileRecord fr)
+            {
                 if (regex == null || Regex.IsMatch(record.GetPath(), regex))
                     list.Add(fr);
-            } else
+            }
+            else
                 foreach (var f in record.Children)
                     RecursiveFileList(f, list, regex);
         }
@@ -451,13 +522,15 @@ namespace LibGGPK2
         /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="searchPattern">Use to filter files in "ROOT" folder on disk</param>
         /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
-        public virtual void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null) {
+        public virtual void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null)
+        {
             var files = Directory.GetFiles(ROOTPath, searchPattern, SearchOption.AllDirectories);
-            foreach (var f in files) {
+            foreach (var f in files)
+            {
                 var path = f[(ROOTPath.Length + 1)..];
                 if ((regex == null || Regex.IsMatch(path, regex)) && FindRecord(path) is IFileRecord ifr)
                     list.Add(new(ifr, f));
-			}
+            }
         }
 
         /// <summary>
@@ -466,7 +539,8 @@ namespace LibGGPK2
         /// <param name="ZipEntries">ZipArchiveEntries to read/></param>
         /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
-        public virtual void GetFileListFromZip(IEnumerable<ZipArchiveEntry> ZipEntries, ICollection<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, string regex = null) {
+        public virtual void GetFileListFromZip(IEnumerable<ZipArchiveEntry> ZipEntries, ICollection<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, string regex = null)
+        {
             var first = ZipEntries.FirstOrDefault();
             if (first == null)
                 return;
@@ -480,16 +554,18 @@ namespace LibGGPK2
                 throw new("The root directory in zip must be ROOT or Bundles2");
 
             var rootNameOffset = parent.Name.Length + 1;
-            foreach (var zae in ZipEntries) {
+            foreach (var zae in ZipEntries)
+            {
                 if (zae.FullName.EndsWith('/'))
                     continue;
                 var path = zae.FullName[rootNameOffset..];
-                if (regex == null || Regex.IsMatch(path, regex)) {
+                if (regex == null || Regex.IsMatch(path, regex))
+                {
                     if (FindRecord(path, parent) is not IFileRecord ifr)
                         throw new Exception("Not found in GGPK: " + zae.FullName);
                     list.Add(new(ifr, zae));
                 }
-			}
+            }
         }
     }
 

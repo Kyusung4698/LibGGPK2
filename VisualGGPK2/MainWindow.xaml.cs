@@ -1,5 +1,4 @@
-﻿using DirectXTexWrapper;
-using LibBundle;
+﻿using LibBundle;
 using LibDat2;
 using LibGGPK2;
 using LibGGPK2.Records;
@@ -299,7 +298,7 @@ namespace VisualGGPK2
                                 {
                                     var buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     buffer = DdsRedirectAndHeaderProcess(buffer, rtn);
-									Image.Source = DdsToBitmap(buffer);
+									//Image.Source = DdsToBitmap(buffer);
                                     Image.Tag = buffer;
                                     Image.Width = ImageView.ActualWidth;
                                     Image.Height = ImageView.ActualHeight;
@@ -338,167 +337,7 @@ namespace VisualGGPK2
 					span = span[16..];
 			}
 			return buffer == span ? buffer : span.ToArray();
-		}
-        public static DXGI_FORMAT_Managed ToWPFSupported(DXGI_FORMAT_Managed format) {
-            switch (format) {
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_TYPELESS:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_TYPELESS:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B5G5R5A1_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R1_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32_FLOAT:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32_TYPELESS:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_D32_FLOAT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UINT:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_TYPELESS:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_D16_UNORM:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UINT:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R8_TYPELESS:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_A8_UNORM:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UINT:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_TYPELESS:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_TYPELESS:
-                    return format;
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_UNORM:
-                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_UINT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_FLOAT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_SNORM:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_SINT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_UNORM:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_UINT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_TYPELESS:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
-					return DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM;
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
-					return DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_UNORM;
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_D24_UNORM_S8_UINT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
-					return DXGI_FORMAT_Managed.DXGI_FORMAT_R32_FLOAT;
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_FLOAT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_SNORM:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_SINT:
-					return DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM;
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_X24_TYPELESS_G8_UINT:
-				case DXGI_FORMAT_Managed.DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
-					return DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UNORM;
-				default:
-                    var bpp = DirectXTex.BitsPerPixel(format);
-                    if (bpp <= 32)
-					    return DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM;
-					if (bpp <= 64)
-						return DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM;
-					return DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT;
-			};
-		}
-		public static PixelFormat? ToPixelFormat(DXGI_FORMAT_Managed format, bool isPMAlpha) {
-            if (isPMAlpha)
-                return format switch {
-					DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM or
-					DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UINT or
-					DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_TYPELESS => PixelFormats.Prgba64,
-                    DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT or
-                    DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_TYPELESS => PixelFormats.Prgba128Float,
-                    _ => null
-                };
-			return format switch {
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_TYPELESS or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM_SRGB => PixelFormats.Bgra32,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_TYPELESS or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM_SRGB => PixelFormats.Bgr32,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B5G5R5A1_UNORM => PixelFormats.Bgr555,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM => PixelFormats.Bgr565,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R1_UNORM => PixelFormats.BlackWhite,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R32_FLOAT or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R32_TYPELESS or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_D32_FLOAT => PixelFormats.Gray32Float,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UINT or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R16_TYPELESS or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_D16_UNORM => PixelFormats.Gray16,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UNORM or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UINT or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R8_TYPELESS or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_A8_UNORM => PixelFormats.Gray8,
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM or
-                DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UINT or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_TYPELESS => PixelFormats.Rgba64,
-                DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT or
-				DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_TYPELESS => PixelFormats.Rgba128Float,
-				_ => null
-			};
-		}
-		public static unsafe BitmapSource DdsToBitmap(byte[] buffer) {
-            fixed (byte* p = buffer)
-                if (*(int*)p != 0x20534444) // "DDS "
-					buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4); // for game before v3.11.2
-			var image = new DirectXTexWrapper.Image();
-            try {
-				fixed (byte* p = buffer) {
-					var hr = DirectXTex.LoadDDSSingleFrame(p, buffer.Length, ref image);
-					if (hr < 0)
-						throw new COMException("Failed to read dds file", hr);
-				}
-
-				var pma = image.IsPMAlpha();
-				var format = ToPixelFormat(image.format, pma);
-				if (!format.HasValue) {
-					var newFormat = ToWPFSupported(image.format);
-					var hr = DirectXTex.Convert(ref image, newFormat);
-					if (hr < 0)
-						throw new COMException($"Failed to convert dds image format from {image.format} to {newFormat}", hr);
-					format = ToPixelFormat(image.format, pma);
-				}
-				return BitmapSource.Create(image.width, image.height, 96, 96, format.Value, null, image.pixels, image.slicePitch, image.rowPitch);
-			} finally {
-                image.Release();
-            }
-        }
-        [DllImport("mfplat")]
-        private extern static DXGI_FORMAT_Managed MFMapDX9FormatToDXGIFormat(uint dx9);
-		public static BLOB BitmapToDdsFile(Bitmap bitmap) {
-            var format = bitmap.PixelFormat;
-            var dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM;
-            switch (format) {
-				case System.Drawing.Imaging.PixelFormat.Format32bppRgb:
-					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM;
-					break;
-				case System.Drawing.Imaging.PixelFormat.Format16bppRgb565:
-					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM;
-					break;
-				case System.Drawing.Imaging.PixelFormat.Format16bppRgb555:
-                    format = System.Drawing.Imaging.PixelFormat.Format16bppRgb565;
-					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM;
-					break;
-                case System.Drawing.Imaging.PixelFormat.Format16bppGrayScale:
-					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM;
-					break;
-            }
-
-            var bd = bitmap.LockBits(new(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, format);
-            var image = new DirectXTexWrapper.Image {
-                width = bd.Width,
-                height = bd.Height,
-                format = dformat,
-                pixels = bd.Scan0,
-                rowPitch = bd.Stride,
-                slicePitch = bd.Stride * bd.Height
-            };
-            DirectXTex.SaveDds(ref image, out var blob);
-			image.Release();
-			bitmap.UnlockBits(bd);
-			return blob;
-		}
+		}        
 
         /// <summary>
         /// TreeViewItem MouseDown event
@@ -868,7 +707,7 @@ namespace VisualGGPK2
 					
 					var sfd = new SaveFileDialog { FileName = name, Filter = "*.png|*.png" };
                     if (sfd.ShowDialog() == true) {
-                        SaveImageSource(DdsToBitmap(buffer), sfd.FileName);
+                        //SaveImageSource(DdsToBitmap(buffer), sfd.FileName);
 						MessageBox.Show(this, "Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
 				}
@@ -947,7 +786,7 @@ namespace VisualGGPK2
 						Task.Run(() => {
 							try {
 								b = DdsRedirectAndHeaderProcess(b, bfn);
-								SaveImageSource(DdsToBitmap(b), path[..^4] + ".png");
+								//SaveImageSource(DdsToBitmap(b), path[..^4] + ".png");
 								Interlocked.Increment(ref done);
 								ProgressStep?.Invoke();
                                 semaphore?.Release();
@@ -975,7 +814,7 @@ namespace VisualGGPK2
 					Task.Run(() => {
 						try {
 							b = DdsRedirectAndHeaderProcess(b, (RecordTreeNode)record);
-							SaveImageSource(DdsToBitmap(b), path[..^4] + ".png");
+							//SaveImageSource(DdsToBitmap(b), path[..^4] + ".png");
 							Interlocked.Increment(ref done);
 							ProgressStep?.Invoke();
 							if (COM == null)
@@ -1021,8 +860,8 @@ namespace VisualGGPK2
             uint fourcc; // Get origin dds DXGI_FORMAT
             fixed (byte* p = (byte[])Image.Tag)
                 fourcc = *(uint*)(p + 84);
-            var blob = BitmapToDdsFile(bitmap);
-			fr.ReplaceContent(new ReadOnlySpan<byte>(blob.Pointer, blob.Length).ToArray());
+            //var blob = BitmapToDdsFile(bitmap);
+			//fr.ReplaceContent(new ReadOnlySpan<byte>(blob.Pointer, blob.Length).ToArray());
 
 			MessageBox.Show(this, "Wrote " + ofd.FileName + "\r\ninto " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
 			OnTreeSelectedChanged(null, null);
