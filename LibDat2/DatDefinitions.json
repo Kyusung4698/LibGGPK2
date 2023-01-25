@@ -5629,6 +5629,11 @@
 		"RecipeId": "i32"
 	},
 	"RelativeImportanceConstants": {},
+	"ReminderText": {
+		"Id": "string",
+		"Text": "string",
+		"TextHardmode": "string"
+	},
 	"RitualBalancePerLevel": {
 		"MinLevel": "i32",
 		"Unknown0": "i32",
